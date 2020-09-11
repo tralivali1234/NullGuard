@@ -1,49 +1,40 @@
 ﻿using System;
-using NUnit.Framework;
+using System.Reflection;
+using System.Threading.Tasks;
+using VerifyXunit;
+using Xunit;
 
-[TestFixture]
+[UsesVerify]
 public class RewritingConstructors
 {
-    Type sampleClassType;
-    Type classToExcludeType;
-
-    [SetUp]
-    public void SetUp()
+    [Fact]
+    public Task RequiresNonNullArgument()
     {
-        sampleClassType = AssemblyWeaver.Assemblies[0].GetType("SimpleClass");
-        classToExcludeType = AssemblyWeaver.Assemblies[1].GetType("ClassToExclude");
-
-        AssemblyWeaver.TestListener.Reset();
+        var type = AssemblyWeaver.Assembly.GetType("SimpleClass");
+        var exception = Assert.Throws<TargetInvocationException>(() => Activator.CreateInstance(type, null, ""));
+        return Verifier.Verify(exception.InnerException.Message);
     }
 
-    [Test]
-    public void RequiresNonNullArgument()
+    [Fact]
+    public Task RequiresNonNullOutArgument()
     {
-        Assert.That(new TestDelegate(() => Activator.CreateInstance(sampleClassType, null, "")),
-            Throws.TargetInvocationException
-                .With.InnerException.TypeOf<ArgumentNullException>()
-                .And.InnerException.Property("ParamName").EqualTo("nonNullArg"));
-    }
-
-    [Test]
-    public void RequiresNonNullOutArgument()
-    {
+        var type = AssemblyWeaver.Assembly.GetType("SimpleClass");
         var args = new object[1];
-        Assert.That(new TestDelegate(() => Activator.CreateInstance(sampleClassType, args)),
-            Throws.TargetInvocationException
-                .With.InnerException.TypeOf<InvalidOperationException>());
-        Assert.AreEqual("Fail: [NullGuard] Out parameter 'nonNullOutArg' is null.", AssemblyWeaver.TestListener.Message);
+        var exception = Assert.Throws<TargetInvocationException>(() => Activator.CreateInstance(type, args));
+        return Verifier.Verify(exception.InnerException.Message);
     }
 
-    [Test]
+    [Fact]
     public void AllowsNullWhenAttributeApplied()
     {
-        Activator.CreateInstance(sampleClassType, "", null);
+        var type = AssemblyWeaver.Assembly.GetType("SimpleClass");
+        Activator.CreateInstance(type, "", null);
     }
 
-    [Test]
+    [Fact]
     public void AllowsNullWhenClassMatchExcludeRegex()
     {
-        Activator.CreateInstance(classToExcludeType, new object[]{ null });
+        var type = AssemblyWeaver.Assembly.GetType("ClassToExclude");
+        Activator.CreateInstance(type, new object[] {null});
     }
 }

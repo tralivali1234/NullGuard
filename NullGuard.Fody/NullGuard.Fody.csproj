@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FodyHelpers" Version="6.2.5" />
+
+    <Compile Include="..\NullGuard\ValidationFlags.cs">
+      <Link>ValidationFlags.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <Target Name="CopyWeaverForSmokeTest" AfterTargets="PostBuildEvent">
+    <PropertyGroup>
+      <CopyTarget>$(TargetDir)$(ProjectName)</CopyTarget>
+    </PropertyGroup>
+    <MakeDir Directories="$(SolutionDir)Tools" />
+    <Copy SourceFiles="$(CopyTarget).dll" DestinationFolder="$(SolutionDir)Tools" />
+  </Target>
+</Project>
